@@ -39,13 +39,37 @@ example : min a b = min b a := by
     apply min_le_left
 
 example : max a b = max b a := by
-  sorry
+  apply le_antisymm <;> exact max_le (le_max_right _ _) (le_max_left _ _)
+
 example : min (min a b) c = min a (min b c) := by
-  sorry
+  apply le_antisymm
+  · refine le_min ?_ ?_
+    · exact le_trans (min_le_left (min a b) c) (min_le_left a b)
+    · refine le_min ?_ ?_
+      · exact le_trans (min_le_left (min a b) c) (min_le_right a b)
+      · exact min_le_right (min a b) c
+  · refine le_min ?_ ?_
+    · refine le_min ?_ ?_
+      · exact min_le_left _ _
+      · exact le_trans (min_le_right a (min b c)) (min_le_left b c)
+    · exact le_trans (min_le_right a (min b c)) (min_le_right b c)
+
 theorem aux : min a b + c ≤ min (a + c) (b + c) := by
-  sorry
+  refine le_min ?_ ?_
+  · exact add_le_add_right (min_le_left a b) c
+  · refine add_le_add_right ?_ c
+    exact min_le_right a b
+
 example : min a b + c = min (a + c) (b + c) := by
-  sorry
+  apply le_antisymm
+  · apply aux
+  · have h₀ : min (a + c) (b + c) ≤ a + c := min_le_left (a + c) (b + c)
+    have h₁ : min (a + c) (b + c) ≤ b + c := min_le_right (a + c) (b + c)
+    have : a ≤ b ∨ b ≤ a := by exact LinearOrder.le_total a b
+    rcases (LinearOrder.le_total a b) with h₁ | h₂
+    · rw [min_eq_left h₁, min_eq_left (add_le_add_right h₁ c)]
+    · have : min a b = b := min_eq_right h₂
+      rw [min_eq_right h₂, min_eq_right (add_le_add_right h₂ c)]
 #check (abs_add : ∀ a b : ℝ, |a + b| ≤ |a| + |b|)
 
 example : |a| - |b| ≤ |a - b| :=
@@ -66,7 +90,10 @@ example : x ∣ x ^ 2 := by
   apply dvd_mul_left
 
 example (h : x ∣ w) : x ∣ y * (x * z) + x ^ 2 + w ^ 2 := by
-  sorry
+  rcases h with ⟨k, h_k⟩
+  rw[h_k]
+  rw[mul_pow]
+  exact ⟨y*z + x + x*k^2, by linarith⟩ -- Not interested in the minutiae.
 end
 
 section
@@ -78,7 +105,8 @@ variable (m n : ℕ)
 #check (Nat.lcm_zero_left n : Nat.lcm 0 n = 0)
 
 example : Nat.gcd m n = Nat.gcd n m := by
-  sorry
+  apply dvd_antisymm <;>
+  · refine Nat.dvd_gcd ?_ ?_
+    · exact Nat.gcd_dvd_right _ _
+    · exact Nat.gcd_dvd_left _ _
 end
-
-
