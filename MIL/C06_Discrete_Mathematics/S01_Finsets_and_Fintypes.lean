@@ -126,9 +126,9 @@ example : Finset.min' {2, 6, 7} ⟨6, by trivial⟩ = 2 := by trivial
 
 example (s : Finset ℕ) : s.card = #s := by rfl
 
-example (s : Finset ℕ) : s.card = ∑ i ∈ s, 1 := by rw [card_eq_sum_ones]
+example (s : Finset ℕ) : s.card = ∑ _ ∈ s, 1 := by rw [card_eq_sum_ones]
 
-example (s : Finset ℕ) : s.card = ∑ i ∈ s, 1 := by simp
+example (s : Finset ℕ) : s.card = ∑ _ ∈ s, 1 := by simp
 
 section
 variable {α : Type*} [Fintype α]
@@ -148,4 +148,3 @@ variable (s : Finset ℕ)
 example : (↑s : Type) = {x : ℕ // x ∈ s} := rfl
 example : Fintype.card ↑s = s.card := by simp
 end
-

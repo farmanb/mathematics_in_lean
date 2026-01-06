@@ -58,19 +58,33 @@ example : x < |y| → x < y ∨ x < -y := by
 namespace MyAbs
 
 theorem le_abs_self (x : ℝ) : x ≤ |x| := by
-  sorry
+  exact le_max_left x (-x)
 
 theorem neg_le_abs_self (x : ℝ) : -x ≤ |x| := by
-  sorry
+  exact le_max_right x (-x)
 
 theorem abs_add (x y : ℝ) : |x + y| ≤ |x| + |y| := by
-  sorry
+  apply max_le
+  · exact add_le_add (le_abs_self x) (le_abs_self y)
+  · rw [neg_add]
+    exact add_le_add (neg_le_abs_self x) (neg_le_abs_self y)
 
 theorem lt_abs : x < |y| ↔ x < y ∨ x < -y := by
-  sorry
+  constructor
+  · intro h
+    exact lt_max_iff.mp h
+  · rintro (h₁ | h₂)
+    · exact lt_of_lt_of_le h₁ (le_abs_self y)
+    · exact lt_of_lt_of_le h₂ (neg_le_abs_self y)
 
 theorem abs_lt : |x| < y ↔ -y < x ∧ x < y := by
-  sorry
+  constructor
+  · intro h
+    constructor
+    · exact neg_lt.mpr (lt_of_le_of_lt (neg_le_abs_self x) h)
+    · exact lt_of_le_of_lt (le_abs_self x) h
+  · rintro ⟨h₁, h₂⟩
+    exact max_lt (a := x) (b := -x) (c := y) h₂ (neg_lt.mp h₁)
 
 end MyAbs
 
@@ -91,23 +105,32 @@ example {m n k : ℕ} (h : m ∣ n ∨ m ∣ k) : m ∣ n * k := by
     apply dvd_mul_right
 
 example {z : ℝ} (h : ∃ x y, z = x ^ 2 + y ^ 2 ∨ z = x ^ 2 + y ^ 2 + 1) : z ≥ 0 := by
-  sorry
+  rcases h with ⟨x, y, h⟩
+  have h' : x^2 + y^2 ≥ 0 := calc
+    x^2 + y^2 ≥ 0 + 0 := add_le_add (sq_nonneg x) (sq_nonneg y)
+    _ = 0 := add_zero 0
+  rcases h with (h₁ | h₂)
+  · exact le_of_le_of_eq h' (id (Eq.symm h₁))
+  · calc z = x^2 + y^2 + 1 := h₂
+    _ ≥ 0 + 1 := add_le_add_right h' 1
+    _ = 1 := zero_add 1
+    _ ≥ 0 := zero_le_one' ℝ
 
 example {x : ℝ} (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
-  sorry
+  exact sq_eq_one_iff.mp h
 
 example {x y : ℝ} (h : x ^ 2 = y ^ 2) : x = y ∨ x = -y := by
-  sorry
+  exact sq_eq_sq_iff_eq_or_eq_neg.mp h
 
 section
 variable {R : Type*} [CommRing R] [IsDomain R]
 variable (x y : R)
 
 example (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
-  sorry
+  exact sq_eq_one_iff.mp h
 
 example (h : x ^ 2 = y ^ 2) : x = y ∨ x = -y := by
-  sorry
+  exact sq_eq_sq_iff_eq_or_eq_neg.mp h
 
 end
 
@@ -124,5 +147,13 @@ example (P : Prop) : ¬¬P → P := by
   contradiction
 
 example (P Q : Prop) : P → Q ↔ ¬P ∨ Q := by
-  sorry
-
+  constructor
+  · intro hpq
+    cases em P
+    · right
+      apply hpq
+      assumption
+    · left; assumption
+  · rintro (h₁ | h₂)
+    · intro; contradiction
+    · intro; assumption

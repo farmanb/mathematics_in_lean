@@ -105,7 +105,8 @@ class Group₁ (G : Type) extends Monoid₁ G, Inv₁ G where
   inv_dia : ∀ a : G, a⁻¹ ⋄ a = 𝟙
 
 
-lemma left_inv_eq_right_inv₁ {M : Type} [Monoid₁ M] {a b c : M} (hba : b ⋄ a = 𝟙) (hac : a ⋄ c = 𝟙) : b = c := by
+lemma left_inv_eq_right_inv₁ {M : Type} [Monoid₁ M] {a b c : M} (hba : b ⋄ a = 𝟙) (hac : a ⋄ c = 𝟙)
+    : b = c := by
   rw [← DiaOneClass₁.one_dia c, ← hba, Semigroup₁.dia_assoc, hac, DiaOneClass₁.dia_one b]
 
 
@@ -118,13 +119,11 @@ example {M : Type} [Monoid₁ M] {a b c : M} (hba : b ⋄ a = 𝟙) (hac : a ⋄
   rw [← one_dia c, ← hba, dia_assoc, hac, dia_one b]
 
 
-lemma inv_eq_of_dia [Group₁ G] {a b : G} (h : a ⋄ b = 𝟙) : a⁻¹ = b :=
-  sorry
+lemma inv_eq_of_dia [Group₁ G] {a b : G} (h : a ⋄ b = 𝟙) : a⁻¹ = b := by
+  rw [← one_dia b, ← inv_dia a, dia_assoc, h, dia_one]
 
-lemma dia_inv [Group₁ G] (a : G) : a ⋄ a⁻¹ = 𝟙 :=
-  sorry
-
-
+lemma dia_inv [Group₁ G] (a : G) : a ⋄ a⁻¹ = 𝟙 := by
+  nth_rw 1 [← inv_eq_of_dia (inv_dia a), inv_dia]
 
 
 class AddSemigroup₃ (α : Type) extends Add α where
@@ -146,7 +145,8 @@ export AddSemigroup₃ (add_assoc₃)
 
 whatsnew in
 @[to_additive]
-lemma left_inv_eq_right_inv' {M : Type} [Monoid₃ M] {a b c : M} (hba : b * a = 1) (hac : a * c = 1) : b = c := by
+lemma left_inv_eq_right_inv' {M : Type} [Monoid₃ M] {a b c : M}
+    (hba : b * a = 1) (hac : a * c = 1) : b = c := by
   rw [← one_mul c, ← hba, mul_assoc₃, hac, mul_one b]
 
 #check left_neg_eq_right_neg'
@@ -176,21 +176,21 @@ attribute [simp] Group₃.inv_mul AddGroup₃.neg_add
 
 
 @[to_additive]
-lemma inv_eq_of_mul [Group₃ G] {a b : G} (h : a * b = 1) : a⁻¹ = b :=
-  sorry
-
+lemma inv_eq_of_mul [Group₃ G] {a b : G} (h : a * b = 1) : a⁻¹ = b := by
+  rw [← Monoid₃.one_mul b, ← Group₃.inv_mul a, mul_assoc₃, h, Monoid₃.mul_one]
 
 @[to_additive (attr := simp)]
 lemma Group₃.mul_inv {G : Type} [Group₃ G] {a : G} : a * a⁻¹ = 1 := by
-  sorry
+  nth_rw 1 [← inv_eq_of_mul (inv_mul a), inv_mul]
 
 @[to_additive]
 lemma mul_left_cancel₃ {G : Type} [Group₃ G] {a b c : G} (h : a * b = a * c) : b = c := by
-  sorry
+  rw [← one_mul b, ← Group₃.inv_mul a, mul_assoc₃, h, ← mul_assoc₃, Group₃.inv_mul a, one_mul]
 
 @[to_additive]
 lemma mul_right_cancel₃ {G : Type} [Group₃ G] {a b c : G} (h : b*a = c*a) : b = c := by
-  sorry
+  rw [← mul_one b, ← Group₃.mul_inv (a := a), ← mul_assoc₃, h, mul_assoc₃, Group₃.mul_inv, mul_one]
+
 
 class AddCommGroup₃ (G : Type) extends AddGroup₃ G, AddCommMonoid₃ G
 
@@ -207,7 +207,30 @@ class Ring₃ (R : Type) extends AddGroup₃ R, Monoid₃ R, MulZeroClass R wher
 
 instance {R : Type} [Ring₃ R] : AddCommGroup₃ R :=
 { add_comm := by
-    sorry }
+    intro a b
+    have neg_one_mul : ∀ x : R, -1 * x = -x := by
+      intro x
+      refine Eq.symm (neg_eq_of_add ?_)
+      nth_rw 1 [← Monoid₃.one_mul x]
+      rw[← Ring₃.right_distrib, AddGroup₃.add_neg, zero_mul]
+    have neg_mul : ∀ x y : R, - (x + y) = -x + -y := by
+      intro x y
+      rw [← neg_one_mul, Ring₃.left_distrib, neg_one_mul, neg_one_mul]
+    have : a + b + -(b + a) = 0 := calc
+      _ = a + b + (-b + -a) := by rw [neg_mul]
+      _ = 0 := by
+        rw [← add_assoc₃, add_assoc₃ a, AddGroup₃.add_neg, add_zero, AddGroup₃.add_neg]
+    have : -(b + a) + (a + b) = 0 := calc
+      _ = -b + -a + (a + b) := by rw [neg_mul]
+      _ = 0 := by
+        rw [← add_assoc₃, add_assoc₃ (-b), AddGroup₃.neg_add, add_zero, AddGroup₃.neg_add]
+    have := neg_eq_of_add this
+    have neg_neg : ∀ x : R, - -x = x := by
+      intro x
+      rw [← neg_one_mul, ← neg_one_mul x, ← mul_assoc₃, neg_one_mul,
+        neg_eq_of_add (AddGroup₃.neg_add 1), one_mul]
+    rw [neg_neg] at this
+    exact Eq.symm this}
 
 instance : Ring₃ ℤ where
   add := (· + ·)
@@ -273,8 +296,11 @@ def zsmul₁ {M : Type*} [Zero M] [Add M] [Neg M] : ℤ → M → M
 
 instance abGrpModule (A : Type) [AddCommGroup₃ A] : Module₁ ℤ A where
   smul := zsmul₁
-  zero_smul := sorry
-  one_smul := sorry
+  zero_smul := fun _ => rfl
+  one_smul := by
+    intro m
+    change nsmul₁ 1 m = m
+    rw [nsmul₁, nsmul₁, add_zero]
   mul_smul := sorry
   add_smul := sorry
   smul_add := sorry
@@ -311,4 +337,3 @@ instance : AddMonoid₄ ℤ where
     by rw [Int.add_mul, Int.add_comm, Int.one_mul]
 
 example (n : ℕ) (m : ℤ) : SMul.smul (self := mySMul) n m = n * m := rfl
-

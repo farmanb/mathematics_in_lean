@@ -48,7 +48,20 @@ theorem dvd_fac {i n : ℕ} (ipos : 0 < i) (ile : i ≤ n) : i ∣ fac n := by
 theorem pow_two_le_fac (n : ℕ) : 2 ^ (n - 1) ≤ fac n := by
   rcases n with _ | n
   · simp [fac]
-  sorry
+  · /- have : n + 1 - 1 = n := by exact rfl
+    rw [this] -/
+    induction n with
+    | zero => simp[fac]
+    | succ k ih =>
+      have dumb₀ : k + 1 + 1 - 1 = k + 1 := by simp
+      rw [dumb₀]
+      have dumb₁ : k + 1 + 1 = k + 2 := by simp
+      rw [dumb₁]
+      have dumb₂ : k + 1 - 1 = k := by simp
+      rw [dumb₂] at ih
+      rw [Nat.pow_succ', fac]
+      rw [dumb₁]
+      exact Nat.mul_le_mul (Nat.le_add_left 2 k) ih
 section
 
 variable {α : Type*} (s : Finset ℕ) (f : ℕ → ℕ) (n : ℕ)
@@ -99,7 +112,12 @@ theorem sum_id (n : ℕ) : ∑ i ∈ range (n + 1), i = n * (n + 1) / 2 := by
   ring
 
 theorem sum_sqr (n : ℕ) : ∑ i ∈ range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) / 6 := by
-  sorry
+  rw [Nat.div_eq_of_eq_mul_right (by norm_num : 0 < 6)]
+  induction n with
+  | zero => simp
+  | succ k ih =>
+    rw [Finset.sum_range_succ]
+    linarith
 end
 
 inductive MyNat where
@@ -134,13 +152,28 @@ theorem add_comm (m n : MyNat) : add m n = add n m := by
   rw [add, succ_add, ih]
 
 theorem add_assoc (m n k : MyNat) : add (add m n) k = add m (add n k) := by
-  sorry
+  induction k with
+  | zero => rfl
+  | succ k ih => rw [add, ih, add, add]
+
 theorem mul_add (m n k : MyNat) : mul m (add n k) = add (mul m n) (mul m k) := by
-  sorry
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [add, mul, ih, mul, add_assoc]
 theorem zero_mul (n : MyNat) : mul zero n = zero := by
-  sorry
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [mul, ih, zero_add]
 theorem succ_mul (m n : MyNat) : mul (succ m) n = add (mul m n) n := by
-  sorry
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [mul, ih, mul, add_assoc, add_comm n _, succ_add, add, add, add_assoc]
 theorem mul_comm (m n : MyNat) : mul m n = mul n m := by
-  sorry
+  induction n with
+  | zero => rw [mul, zero_mul]
+  | succ n ih =>
+    rw [mul, ih, succ_mul]
 end MyNat

@@ -28,10 +28,11 @@ theorem sb_right_inv {x : α} (hx : x ∉ sbSet f g) : g (invFun g x) = x := by
     rw [sbSet, mem_iUnion]
     use 0
     rw [sbAux, mem_diff]
-    sorry
+    exact ⟨by trivial, hx⟩
   have : ∃ y, g y = x := by
-    sorry
-  sorry
+    rcases this with ⟨y, _, hgy⟩
+    exact ⟨y, hgy⟩
+  exact Function.invFun_eq this
 
 theorem sb_injective (hf : Injective f) : Injective (sbFun f g) := by
   set A := sbSet f g with A_def
@@ -50,15 +51,47 @@ theorem sb_injective (hf : Injective f) : Injective (sbFun f g) := by
       rw [if_pos x₁A, if_neg x₂nA] at hxeq
       rw [A_def, sbSet, mem_iUnion] at x₁A
       have x₂eq : x₂ = g (f x₁) := by
-        sorry
+        rw [hxeq]
+        symm
+        apply invFun_eq
+        by_contra! h
+        apply x₂nA
+        apply mem_iUnion.mpr
+        refine ⟨0, ?_⟩
+        refine ⟨?_, ?_⟩
+        trivial
+        rintro ⟨y, _, hgy⟩
+        exact h y hgy
       rcases x₁A with ⟨n, hn⟩
       rw [A_def, sbSet, mem_iUnion]
       use n + 1
       simp [sbAux]
       exact ⟨x₁, hn, x₂eq.symm⟩
-    sorry
+    exact hf (by simpa [x₁A, x₂A] using hxeq)
   push_neg at xA
-  sorry
+  rcases xA with ⟨hnx₁A, hnx₂A⟩
+  have : invFun g x₁ = invFun g x₂ := by
+    simpa [hnx₁A, hnx₂A] using hxeq
+  have heq := congrArg g this
+  have : ∃ y : β, g y = x₁ := by
+    by_contra! h'
+    apply hnx₁A
+    apply mem_iUnion.mpr
+    refine ⟨0, ?_⟩
+    refine ⟨by trivial, ?_⟩
+    rintro ⟨y, _, hgy⟩
+    exact h' y hgy
+  rw [← Function.invFun_eq this]
+  have : ∃ y : β, g y = x₂ := by
+    by_contra! h'
+    apply hnx₂A
+    apply mem_iUnion.mpr
+    refine ⟨0, ?_⟩
+    refine ⟨by trivial, ?_⟩
+    rintro ⟨y, _, hgy⟩
+    exact h' y hgy
+  rw [← Function.invFun_eq this]
+  exact heq
 
 theorem sb_surjective (hg : Injective g) : Surjective (sbFun f g) := by
   set A := sbSet f g with A_def
@@ -77,8 +110,20 @@ theorem sb_surjective (hg : Injective g) : Surjective (sbFun f g) := by
       exact ⟨n, xmem⟩
     rw [h_def, sbFun, if_pos this]
     apply hg hx
-
-  sorry
+  · have : g y ∉ sbSet f g := gyA
+    have heq : h (g y) = invFun g (g y) := by
+      rw [h_def]
+      unfold sbFun
+      simp
+      intro this
+      contradiction
+    have : invFun g (g y) = y := by
+      have : invFun g (g y) = (invFun g ∘ g) y := by exact hg rfl
+      rw [this]
+      rw [Function.invFun_comp hg]
+      rfl
+    refine ⟨g y, ?_⟩
+    rw [heq,this]
 
 end
 

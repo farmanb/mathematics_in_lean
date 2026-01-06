@@ -179,7 +179,24 @@ end Int
 
 theorem sq_add_sq_eq_zero {α : Type*} [Ring α] [LinearOrder α] [IsStrictOrderedRing α]
     (x y : α) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
-  sorry
+  constructor
+  · intro h
+    constructor
+    · apply pow_eq_zero (n := 2)
+      refine le_antisymm ?_ ?_
+      · calc
+        x^2 = -y^2 := Eq.symm (neg_eq_of_add_eq_zero_left h)
+        _ ≤ 0 := Right.neg_nonpos_iff.mpr (sq_nonneg y)
+      · exact sq_nonneg x
+    · apply pow_eq_zero (n := 2)
+      refine le_antisymm ?_ ?_
+      · calc
+        y^2 = -x^2 := Eq.symm (neg_eq_of_add_eq_zero_right h)
+        _ ≤ 0 := Right.neg_nonpos_iff.mpr (sq_nonneg x)
+      · exact sq_nonneg y
+  · rintro ⟨hx0, hy0⟩
+    rw [hx0, hy0, pow_two, zero_mul, add_zero]
+
 namespace GaussInt
 
 def norm (x : GaussInt) :=
@@ -187,13 +204,27 @@ def norm (x : GaussInt) :=
 
 @[simp]
 theorem norm_nonneg (x : GaussInt) : 0 ≤ norm x := by
-  sorry
+  exact Left.add_nonneg (sq_nonneg x.re) (sq_nonneg x.im)
+
 theorem norm_eq_zero (x : GaussInt) : norm x = 0 ↔ x = 0 := by
-  sorry
+  rw [norm, sq_add_sq_eq_zero x.re x.im, GaussInt.ext_iff]
+  rfl
+
 theorem norm_pos (x : GaussInt) : 0 < norm x ↔ x ≠ 0 := by
-  sorry
+  constructor
+  · intro h
+    intro hx0
+    rw [(norm_eq_zero x).mpr hx0] at h
+    contradiction
+  · intro hxn0
+    refine lt_of_le_of_ne ?_ ?_
+    · exact x.norm_nonneg
+    · exact Ne.symm ((not_iff_not.mpr (x.norm_eq_zero)).mpr hxn0)
+
 theorem norm_mul (x y : GaussInt) : norm (x * y) = norm x * norm y := by
-  sorry
+  rw [norm, norm, norm, mul_re, mul_im]
+  ring
+
 def conj (x : GaussInt) : GaussInt :=
   ⟨x.re, -x.im⟩
 

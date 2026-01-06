@@ -24,7 +24,7 @@ example (h : s ⊆ t) : s ∩ u ⊆ t ∩ u := by
   exact ⟨h xsu.1, xsu.2⟩
 
 example (h : s ⊆ t) : s ∩ u ⊆ t ∩ u :=
-  fun x ⟨xs, xu⟩ ↦ ⟨h xs, xu⟩
+  fun _ ⟨xs, xu⟩ ↦ ⟨h xs, xu⟩
 
 example : s ∩ (t ∪ u) ⊆ s ∩ t ∪ s ∩ u := by
   intro x hx
@@ -44,7 +44,10 @@ example : s ∩ (t ∪ u) ⊆ s ∩ t ∪ s ∩ u := by
   · right; exact ⟨xs, xu⟩
 
 example : s ∩ t ∪ s ∩ u ⊆ s ∩ (t ∪ u) := by
-  sorry
+  rintro x (hxst | hxsu)
+  · exact ⟨hxst.1, mem_union_left u hxst.2⟩
+  · exact ⟨hxsu.1, mem_union_right t hxsu.2⟩
+
 example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   intro x xstu
   have xs : x ∈ s := xstu.1.1
@@ -64,16 +67,23 @@ example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   rintro (xt | xu) <;> contradiction
 
 example : s \ (t ∪ u) ⊆ (s \ t) \ u := by
-  sorry
+  rintro x ⟨hxs, hnxtu⟩
+  refine ⟨?_, ?_⟩
+  · refine ⟨hxs,?_⟩
+    intro hxt
+    exact hnxtu (mem_union_left u hxt)
+  · intro hxu
+    exact hnxtu (mem_union_right t hxu)
+
 example : s ∩ t = t ∩ s := by
-  ext x
+  ext _
   simp only [mem_inter_iff]
   constructor
   · rintro ⟨xs, xt⟩; exact ⟨xt, xs⟩
   · rintro ⟨xt, xs⟩; exact ⟨xs, xt⟩
 
 example : s ∩ t = t ∩ s :=
-  Set.ext fun x ↦ ⟨fun ⟨xs, xt⟩ ↦ ⟨xt, xs⟩, fun ⟨xt, xs⟩ ↦ ⟨xs, xt⟩⟩
+  Set.ext fun _ ↦ ⟨fun ⟨xs, xt⟩ ↦ ⟨xt, xs⟩, fun ⟨xt, xs⟩ ↦ ⟨xs, xt⟩⟩
 
 example : s ∩ t = t ∩ s := by ext x; simp [and_comm]
 
@@ -82,19 +92,57 @@ example : s ∩ t = t ∩ s := by
   · rintro x ⟨xs, xt⟩; exact ⟨xt, xs⟩
   · rintro x ⟨xt, xs⟩; exact ⟨xs, xt⟩
 
-example : s ∩ t = t ∩ s :=
-    Subset.antisymm sorry sorry
+example : s ∩ t = t ∩ s := by
+  apply Subset.antisymm <;>
+  · intro x hx
+    exact ⟨hx.2, hx.1⟩
+
 example : s ∩ (s ∪ t) = s := by
-  sorry
+  apply Subset.antisymm
+  · intro x hx
+    exact hx.1
+  · intro x hx
+    refine ⟨hx, mem_union_left t hx⟩
 
 example : s ∪ s ∩ t = s := by
-  sorry
+  apply Subset.antisymm
+  · intro x hx
+    rcases hx with (h₁ | h₂)
+    · assumption
+    · exact h₂.1
+  · intro x hx
+    exact mem_union_left (s ∩ t) hx
 
 example : s \ t ∪ t = s ∪ t := by
-  sorry
+  apply Subset.antisymm
+  · rintro x (⟨hxs, hnxt⟩ | hxt)
+    · exact mem_union_left t hxs
+    · exact mem_union_right s hxt
+  · rintro x (hxs | hxt)
+    · rcases em (x ∈ t) with (hxt | hnxt)
+      · exact mem_union_right _ hxt
+      · exact mem_union_left _ ⟨hxs, hnxt⟩
+    · exact mem_union_right _ hxt
 
 example : s \ t ∪ t \ s = (s ∪ t) \ (s ∩ t) := by
-  sorry
+  apply Subset.antisymm
+  · rintro x (⟨hxs, hnxt⟩ | ⟨hxt, hnxs⟩)
+    · refine ⟨mem_union_left _ hxs, ?_⟩
+      · intro hxst
+        exact hnxt (hxst.2)
+    · refine ⟨mem_union_right _ hxt, ?_⟩
+      intro hxst
+      exact hnxs hxst.1
+  · rintro x ⟨hxst, hnxst⟩
+    rcases em (x ∈ s) with (hxs | hnxs)
+    · refine mem_union_left _ ⟨hxs, ?_⟩
+      intro hxt
+      exact hnxst ⟨hxs, hxt⟩
+    · refine mem_union_right _ ⟨?_, hnxs⟩
+      by_contra hnxt
+      rcases hxst with (hxs | hxt)
+      · exact hnxs hxs
+      · exact hnxt hxt
 
 def evens : Set ℕ :=
   { n | Even n }
@@ -115,7 +163,17 @@ example (x : ℕ) : x ∈ (univ : Set ℕ) :=
   trivial
 
 example : { n | Nat.Prime n } ∩ { n | n > 2 } ⊆ { n | ¬Even n } := by
-  sorry
+  intro n
+  rintro ⟨hnprime, hn2⟩
+  rw [Set.mem_setOf] at *
+  rintro ⟨k,hk⟩
+  rw [← two_mul] at hk
+  unfold Nat.Prime at hnprime
+  rcases (hnprime.isUnit_or_isUnit hk) with (h₁ | h₂)
+  · exact Nat.prime_two.not_isUnit h₁
+  · have : k = 1 := Nat.isUnit_iff.mp h₂
+    rw [Nat.isUnit_iff.mp h₂, mul_one] at hk
+    exact Ne.symm (Nat.ne_of_lt hn2) hk
 
 #print Prime
 
@@ -151,10 +209,12 @@ section
 variable (ssubt : s ⊆ t)
 
 example (h₀ : ∀ x ∈ t, ¬Even x) (h₁ : ∀ x ∈ t, Prime x) : ∀ x ∈ s, ¬Even x ∧ Prime x := by
-  sorry
+  intro x hxs
+  exact⟨h₀ x (ssubt hxs), h₁ x (ssubt hxs)⟩
 
 example (h : ∃ x ∈ s, ¬Even x ∧ Prime x) : ∃ x ∈ t, Prime x := by
-  sorry
+  rcases h with ⟨x, hxs, hnxeven, hxprime⟩
+  exact ⟨x, ssubt hxs, hxprime⟩
 
 end
 
@@ -193,7 +253,21 @@ example : (⋂ i, A i ∩ B i) = (⋂ i, A i) ∩ ⋂ i, B i := by
 
 
 example : (s ∪ ⋂ i, A i) = ⋂ i, A i ∪ s := by
-  sorry
+  ext x
+  rw [mem_union, mem_iInter, mem_iInter]
+  constructor
+  · rintro (hxs | hxAi) <;> intro i
+    · exact mem_union_right _ hxs
+    · exact mem_union_left _ (hxAi i)
+  · intro h
+    rcases em (x ∈ s) with (hxs | hnxs)
+    · exact Or.intro_left _ hxs
+    · refine Or.intro_right _ ?_
+      intro i
+      rcases (h i) with (_ | hxs)
+      · assumption
+      · by_contra;
+        exact hnxs hxs
 
 def primes : Set ℕ :=
   { x | Nat.Prime x }
@@ -213,9 +287,16 @@ example : (⋂ p ∈ primes, { x | ¬p ∣ x }) ⊆ { x | x = 1 } := by
   simp
   apply Nat.exists_prime_and_dvd
 
-example : (⋃ p ∈ primes, { x | x ≤ p }) = univ := by
-  sorry
 
+lemma aux (n : ℕ) : ∃ p ∈ primes, n ≤ p := by sorry
+
+example : (⋃ p ∈ primes, { x | x ≤ p }) = univ := by
+  ext x
+  constructor
+  · intro h
+    trivial
+  · intro hx
+    simp only [mem_iUnion, mem_setOf_eq, exists_prop, aux x]
 end
 
 section
@@ -235,4 +316,3 @@ example : ⋂₀ s = ⋂ t ∈ s, t := by
   rfl
 
 end
-

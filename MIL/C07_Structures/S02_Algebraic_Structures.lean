@@ -48,7 +48,7 @@ def permGroup {α : Type*} : Group₁ (Equiv.Perm α)
   mul f g := Equiv.trans g f
   one := Equiv.refl α
   inv := Equiv.symm
-  mul_assoc f g h := (Equiv.trans_assoc _ _ _).symm
+  mul_assoc _ _ _ := (Equiv.trans_assoc _ _ _).symm
   one_mul := Equiv.trans_refl
   mul_one := Equiv.refl_trans
   inv_mul_cancel := Equiv.self_trans_symm
@@ -67,11 +67,12 @@ namespace Point
 def add (a b : Point) : Point :=
   ⟨a.x + b.x, a.y + b.y, a.z + b.z⟩
 
-def neg (a : Point) : Point := sorry
+def neg (a : Point) : Point := {x := -a.x, y := -a.y, z := -a.z}
 
-def zero : Point := sorry
+def zero : Point := {x := 0, y := 0, z := 0}
 
-def addGroupPoint : AddGroup₁ Point := sorry
+def addGroupPoint : AddGroup₁ Point where
+  add := add
 
 end Point
 
@@ -107,7 +108,7 @@ instance {α : Type*} : Group₂ (Equiv.Perm α) where
   mul f g := Equiv.trans g f
   one := Equiv.refl α
   inv := Equiv.symm
-  mul_assoc f g h := (Equiv.trans_assoc _ _ _).symm
+  mul_assoc _ _ _ := (Equiv.trans_assoc _ _ _).symm
   one_mul := Equiv.trans_refl
   mul_one := Equiv.refl_trans
   inv_mul_cancel := Equiv.self_trans_symm

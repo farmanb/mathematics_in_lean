@@ -36,22 +36,56 @@ variable (x y z : α)
 #check (sup_le : x ≤ z → y ≤ z → x ⊔ y ≤ z)
 
 example : x ⊓ y = y ⊓ x := by
-  sorry
+  apply le_antisymm <;>
+  · refine le_inf ?_ ?_
+    · exact inf_le_right
+    · exact inf_le_left
 
 example : x ⊓ y ⊓ z = x ⊓ (y ⊓ z) := by
-  sorry
+  apply le_antisymm
+  · refine le_inf ?_ ?_
+    · exact le_trans inf_le_left inf_le_left
+    · refine le_inf ?_ ?_
+      · exact le_trans inf_le_left inf_le_right
+      · exact inf_le_right
+  · refine le_inf ?_ ?_
+    · refine le_inf ?_ ?_
+      · exact inf_le_left
+      · exact le_trans inf_le_right inf_le_left
+    · exact le_trans inf_le_right inf_le_right
 
 example : x ⊔ y = y ⊔ x := by
-  sorry
+  apply le_antisymm <;>
+  · refine sup_le ?_ ?_
+    · exact le_sup_right
+    · exact le_sup_left
 
 example : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := by
-  sorry
+  apply le_antisymm
+  · refine sup_le ?_ ?_
+    · refine sup_le ?_ ?_
+      · exact le_sup_left
+      · exact le_trans le_sup_left le_sup_right
+    · exact le_trans le_sup_right le_sup_right
+  · refine sup_le ?_ ?_
+    · exact le_trans le_sup_left le_sup_left
+    · refine sup_le ?_ ?_
+      · exact le_trans le_sup_right le_sup_left
+      · exact le_sup_right
 
 theorem absorb1 : x ⊓ (x ⊔ y) = x := by
-  sorry
+  apply le_antisymm
+  · exact inf_le_left
+  · refine le_inf ?_ ?_
+    · exact Preorder.le_refl x
+    · exact le_sup_left
 
 theorem absorb2 : x ⊔ x ⊓ y = x := by
-  sorry
+  apply le_antisymm
+  · refine sup_le ?_ ?_
+    · exact Preorder.le_refl x
+    · exact inf_le_left
+  · exact le_sup_left
 
 end
 
@@ -69,9 +103,11 @@ section
 variable {α : Type*} [Lattice α]
 variable (a b c : α)
 
+/- Nope. -/
 example (h : ∀ x y z : α, x ⊓ (y ⊔ z) = x ⊓ y ⊔ x ⊓ z) : a ⊔ b ⊓ c = (a ⊔ b) ⊓ (a ⊔ c) := by
   sorry
 
+/- Also nope. -/
 example (h : ∀ x y z : α, x ⊔ y ⊓ z = (x ⊔ y) ⊓ (x ⊔ z)) : a ⊓ (b ⊔ c) = a ⊓ b ⊔ a ⊓ c := by
   sorry
 
@@ -87,13 +123,27 @@ variable (a b c : R)
 #check (mul_nonneg : 0 ≤ a → 0 ≤ b → 0 ≤ a * b)
 
 example (h : a ≤ b) : 0 ≤ b - a := by
-  sorry
+  rw [← neg_add_cancel a, sub_eq_neg_add]
+  exact add_le_add_left h (-a)
 
-example (h: 0 ≤ b - a) : a ≤ b := by
-  sorry
+example (h: 0 ≤ b - a) : a ≤ b := calc
+  a = a + 0 := by rw [add_zero]
+  _ ≤ a + (b - a) := add_le_add_left h a
+  _= b := by
+    rw [add_comm, sub_add, sub_self, sub_zero]
 
 example (h : a ≤ b) (h' : 0 ≤ c) : a * c ≤ b * c := by
-  sorry
+  have h₀ : 0 ≤ b - a := calc
+    0 = -a + a := by rw [neg_add_cancel]
+    _ ≤ -a + b := add_le_add_left h (-a)
+    _ = b + -a := by rw[add_comm]
+    _ = b - a := by exact Mathlib.Tactic.RingNF.add_neg b a
+
+  have h₁ : 0 ≤ (b - a) * c := by exact mul_nonneg h₀ h'
+  rw [sub_mul] at h₁
+  have h₂ := add_le_add_left h₁ (a*c)
+  rw [add_zero, add_sub, add_comm, ← add_sub, sub_self, add_zero] at h₂
+  exact h₂
 
 end
 
@@ -106,7 +156,10 @@ variable (x y z : X)
 #check (dist_triangle x y z : dist x z ≤ dist x y + dist y z)
 
 example (x y : X) : 0 ≤ dist x y := by
-  sorry
+  have h : 0 ≤ dist x y + dist x y := calc
+    0 = dist x x := by rw[dist_self]
+    _ ≤ dist x y + dist y x := dist_triangle x y x
+    _ = dist x y + dist x y := by rw [dist_comm y x]
+  apply nonneg_add_self_iff.mp h
 
 end
-

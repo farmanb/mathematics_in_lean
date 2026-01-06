@@ -114,4 +114,8 @@ instance (α β : Type) [LE α] [Monoid α] [LE β] [Monoid β] :
 
 instance (α β : Type) [LE α] [Monoid α] [LE β] [Monoid β] :
     MonoidHomClass₃ (OrderPresMonoidHom α β) α β
-  := sorry
+  where
+    coe := fun f x => f.toFun x
+    coe_injective' := fun _ _ h => OrderPresMonoidHom.ext_iff.mpr h
+    map_one := fun f => f.map_one
+    map_mul := fun f => f.map_mul
